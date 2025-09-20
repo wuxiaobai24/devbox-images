@@ -81,18 +81,8 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
 ENV PATH=/home/devuser/.local/bin:$PATH
 ENV CLAUDE_CODE_HOME=/home/devuser/.claude-code
 
-# 创建简单的 entrypoint 脚本
-RUN echo '#!/bin/bash' > /entrypoint.sh && \
-    echo 'set -e' >> /entrypoint.sh && \
-    echo '' >> /entrypoint.sh && \
-    echo '# 初始化 SSH 主机密钥' >> /entrypoint.sh && \
-    echo 'if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then' >> /entrypoint.sh && \
-    echo '    ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N ""' >> /entrypoint.sh && \
-    echo 'fi' >> /entrypoint.sh && \
-    echo '' >> /entrypoint.sh && \
-    echo '# 启动 SSH 服务' >> /entrypoint.sh && \
-    echo 'echo "Starting SSH service..."' >> /entrypoint.sh && \
-    echo '/usr/sbin/sshd -D' >> /entrypoint.sh && \
+# 创建 entrypoint 脚本
+RUN printf '#!/bin/bash\nset -e\n\n# Generate SSH host keys\nif [ ! -f /etc/ssh/ssh_host_rsa_key ]; then\n    ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N ""\nfi\n\n# Start SSH service\necho "Starting SSH service..."\n/usr/sbin/sshd -D\n' > /entrypoint.sh && \
     chmod +x /entrypoint.sh
 
 # 暴露 SSH 端口
