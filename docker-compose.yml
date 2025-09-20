@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  devbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: devbox-ubuntu24
+    hostname: devbox
+    ports:
+      - "2222:22"  # SSH 端口映射
+      - "8080:8080"  # Claude Code Router 端口
+    volumes:
+      - devbox_home:/home/devuser
+      - devbox_projects:/home/devuser/projects
+      - ./ssh:/home/devuser/.ssh:ro  # 挂载 SSH 密钥
+      - ./config:/home/devuser/.config  # 配置文件持久化
+    environment:
+      - TZ=Asia/Shanghai
+      - LANG=en_US.UTF-8
+      - LC_ALL=en_US.UTF-8
+    restart: unless-stopped
+    networks:
+      - devbox_network
+    healthcheck:
+      test: ["CMD", "pgrep", "sshd"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  devbox_home:
+    driver: local
+  devbox_projects:
+    driver: local
+
+networks:
+  devbox_network:
+    driver: bridge

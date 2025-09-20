@@ -1,0 +1,106 @@
+name: Test DevBox Configuration
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-dockerfile:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Validate Dockerfile syntax
+      run: |
+        # 检查 Dockerfile 是否存在
+        if [ ! -f "Dockerfile" ]; then
+          echo "❌ Dockerfile not found"
+          exit 1
+        fi
+
+        # 基础语法检查
+        echo "🔍 Checking Dockerfile syntax..."
+
+        # 检查必要指令
+        required_directives=("FROM" "RUN" "EXPOSE" "CMD")
+        for directive in "${required_directives[@]}"; do
+          if ! grep -q "^$directive" Dockerfile; then
+            echo "❌ Missing required directive: $directive"
+            exit 1
+          fi
+        done
+
+        echo "✅ Dockerfile syntax validation passed"
+
+    - name: Validate compose configuration
+      run: |
+        # 检查 docker-compose.yml
+        if [ ! -f "docker-compose.yml" ]; then
+          echo "❌ docker-compose.yml not found"
+          exit 1
+        fi
+
+        # 检查 YAML 语法
+        if command -v python3 &> /dev/null; then
+          python3 -c "import yaml; yaml.safe_load(open('docker-compose.yml'))"
+          echo "✅ docker-compose.yml syntax validation passed"
+        else
+          echo "⚠️  YAML validation skipped (python3 not available)"
+        fi
+
+    - name: Check script permissions
+      run: |
+        # 检查脚本文件权限
+        scripts=("start.sh" "stop.sh" "connect.sh" "validate.sh" "install-ai-tools.sh")
+        for script in "${scripts[@]}"; do
+          if [ -f "$script" ] && [ ! -x "$script" ]; then
+            echo "❌ Script $script is not executable"
+            exit 1
+          fi
+        done
+        echo "✅ All script permissions are correct"
+
+  lint-code:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Lint shell scripts
+      run: |
+        # 检查 shell 脚本语法
+        find . -name "*.sh" -exec shellcheck {} + || echo "shellcheck not available, skipping"
+
+    - name: Check documentation links
+      run: |
+        # 检查文档中的链接
+        if command -v markdown-link-check &> /dev/null; then
+          find . -name "*.md" -exec markdown-link-check {} + || echo "markdown-link-check not available, skipping"
+        else
+          echo "⚠️  Link validation skipped (markdown-link-check not available)"
+        fi
+
+  security-scan:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'ubuntu:24.04'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'

@@ -1,0 +1,63 @@
+# 测试版本的 Dockerfile - 快速验证基础功能
+FROM ubuntu:24.04
+
+# 设置环境变量
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Shanghai
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+
+# 安装基础工具
+RUN apt-get update && apt-get install -y \
+    sudo \
+    openssh-server \
+    curl \
+    wget \
+    git \
+    python3 \
+    python3-pip \
+    nodejs \
+    npm \
+    && rm -rf /var/lib/apt/lists/*
+
+# 创建开发用户
+RUN useradd -m -s /bin/bash devuser && \
+    echo "devuser:devuser" | chpasswd && \
+    usermod -aG sudo devuser && \
+    mkdir -p /home/devuser/.ssh && \
+    chown -R devuser:devuser /home/devuser
+
+# 配置 SSH
+RUN mkdir -p /var/run/sshd && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+# 安装 Claude Code CLI (尝试安装)
+RUN npm install -g @anthropic-ai/claude-code || echo "Claude Code CLI 安装失败"
+
+# 创建测试脚本
+RUN cat > /home/devuser/test-env.sh << 'EOF'
+#!/bin/bash
+echo "=== DevBox 环境测试 ==="
+echo "用户: $(whoami)"
+echo "系统: $(cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2)"
+echo "Node.js: $(node --version 2>/dev/null || echo '未安装')"
+echo "npm: $(npm --version 2>/dev/null || echo '未安装')"
+echo "Python: $(python3 --version 2>/dev/null || echo '未安装')"
+echo "pip: $(pip3 --version 2>/dev/null || echo '未安装')"
+echo "Claude Code: $(claude-code --version 2>/dev/null || echo '未安装')"
+echo "SSH 状态: $(service ssh status 2>/dev/null || echo 'SSH 未运行')"
+echo "========================"
+EOF
+
+RUN chmod +x /home/devuser/test-env.sh && chown devuser:devuser /home/devuser/test-env.sh
+
+# 切换到开发用户
+USER devuser
+WORKDIR /home/devuser
+
+# 暴露 SSH 端口
+EXPOSE 22
+
+# 启动 SSH 服务
+CMD ["/usr/sbin/sshd", "-D"]
