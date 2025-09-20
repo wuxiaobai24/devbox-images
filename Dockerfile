@@ -56,14 +56,7 @@ RUN npm install -g @anthropic-ai/claude-code || echo "Claude Code CLI installati
 # 确保 Claude Code CLI 在 PATH 中
 ENV PATH=$PATH:/home/devuser/.local/bin
 
-# 安装 Python 开发工具
-RUN python3 -m pip install --no-cache-dir --break-system-packages \
-    anthropic \
-    fastapi \
-    uvicorn \
-    python-dotenv \
-    httpx \
-    pydantic
+# Python 工具已通过系统包安装，无需额外包
 
 # 配置 SSH
 RUN mkdir -p /var/run/sshd && \
