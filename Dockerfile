@@ -61,8 +61,9 @@ RUN curl -fsSL https://claude.ai/install | sh || echo "curl install failed, will
 ENV PATH=$PATH:/home/devuser/.local/bin
 
 # 安装 Python 开发工具
-RUN pip3 install --upgrade pip && \
-    pip3 install \
+RUN python3 -m ensurepip --upgrade && \
+    python3 -m pip install --upgrade pip && \
+    python3 -m pip install --no-cache-dir \
         anthropic \
         fastapi \
         uvicorn \
