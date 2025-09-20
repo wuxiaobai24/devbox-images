@@ -1,0 +1,177 @@
+name: Build and Publish DevBox Docker Image
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Test Docker image
+      run: |
+        # 运行测试容器
+        docker run -d --name devbox-test -p 2223:22 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+
+        # 等待容器启动
+        sleep 30
+
+        # 测试 SSH 连接
+        timeout 30 bash -c "until nc -z localhost 2223; do sleep 1; done"
+
+        # 测试基本功能
+        docker exec devbox-test pgrep sshd
+        docker exec devbox-test id devuser
+
+        # 清理
+        docker stop devbox-test
+        docker rm devbox-test
+
+  docker-hub:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    needs: build-and-push
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Extract metadata for Docker Hub
+      id: meta-dockerhub
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ secrets.DOCKERHUB_USERNAME }}/devbox-ubuntu24
+        tags: |
+          type=ref,event=branch
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push to Docker Hub
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta-dockerhub.outputs.tags }}
+        labels: ${{ steps.meta-dockerhub.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  create-release:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-and-push, docker-hub]
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: DevBox ${{ github.ref_name }}
+        body: |
+          ## DevBox ${{ github.ref_name }} Release
+
+          ### What's New
+          - Ubuntu 24.04 LTS base image
+          - SSH access enabled
+          - Claude Code CLI pre-installed
+          - Claude Code Router support
+          - Happy client support
+          - Modern development tools
+
+          ### Quick Start
+          ```bash
+          # Pull the image
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+
+          # Run the container
+          docker run -d -p 2222:22 --name devbox ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+
+          # Connect via SSH
+          ssh devuser@localhost -p 2222
+          # Password: devuser
+          ```
+
+          ### Image Details
+          - **Size**: ~1.5GB
+          - **Architecture**: linux/amd64, linux/arm64
+          - **Base Image**: ubuntu:24.04
+
+          ### Features
+          - Ubuntu 24.04 LTS
+          - SSH server (port 22)
+          - Node.js 20
+          - Python 3.11
+          - Git, curl, wget
+          - Claude Code CLI
+          - Claude Code Router (@musistudio)
+          - Happy client (@slopus)
+
+          ---
+          *Release created automatically by GitHub Actions*
+        draft: false
+        prerelease: false
+        generate_release_notes: true
