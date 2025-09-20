@@ -70,12 +70,15 @@ RUN mkdir -p /home/devuser/.ssh && \
     chown devuser:devuser /home/devuser/.ssh && \
     chmod 700 /home/devuser/.ssh
 
+# 生成 SSH 主机密钥（需要在 root 用户下）
+RUN ssh-keygen -A
+
 # 设置开发用户的环境
 USER devuser
 WORKDIR /home/devuser
 
 # 安装 oh-my-zsh
-RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended || echo "oh-my-zsh installation failed"
 
 # 配置环境变量
 ENV PATH=/home/devuser/.local/bin:$PATH
@@ -84,12 +87,12 @@ ENV CLAUDE_CODE_HOME=/home/devuser/.claude-code
 # 暴露 SSH 端口
 EXPOSE 22
 
-# 生成 SSH 主机密钥并启动 SSH 服务
-RUN ssh-keygen -A
-
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD pgrep sshd || exit 1
+
+# 切换回 root 用户启动 SSH 服务
+USER root
 
 # 直接启动 SSH 服务
 CMD ["/usr/sbin/sshd", "-D"]
