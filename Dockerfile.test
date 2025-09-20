@@ -35,6 +35,17 @@ RUN mkdir -p /var/run/sshd && \
 # 安装 Claude Code CLI (尝试安装)
 RUN npm install -g @anthropic-ai/claude-code || echo "Claude Code CLI 安装失败"
 
+# 安装 Python 包 (修复版本)
+RUN python3 -m ensurepip --upgrade && \
+    python3 -m pip install --upgrade pip && \
+    python3 -m pip install --no-cache-dir \
+        anthropic \
+        fastapi \
+        uvicorn \
+        python-dotenv \
+        httpx \
+        pydantic || echo "Python 包安装失败"
+
 # 创建测试脚本
 RUN cat > /home/devuser/test-env.sh << 'EOF'
 #!/bin/bash
@@ -44,7 +55,7 @@ echo "系统: $(cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2)"
 echo "Node.js: $(node --version 2>/dev/null || echo '未安装')"
 echo "npm: $(npm --version 2>/dev/null || echo '未安装')"
 echo "Python: $(python3 --version 2>/dev/null || echo '未安装')"
-echo "pip: $(pip3 --version 2>/dev/null || echo '未安装')"
+echo "pip: $(python3 -m pip --version 2>/dev/null || echo '未安装')"
 echo "Claude Code: $(claude-code --version 2>/dev/null || echo '未安装')"
 echo "SSH 状态: $(service ssh status 2>/dev/null || echo 'SSH 未运行')"
 echo "========================"

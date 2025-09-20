@@ -98,7 +98,7 @@ simulate_python() {
     echo "🐍 步骤 8/10: Python 生态工具"
     echo "   检查 Python 版本:"
     echo "   - Python: $(python3 --version 2>/dev/null || echo '3.11.x')"
-    echo "   - pip: $(pip3 --version 2>/dev/null || echo '24.x.x')"
+    echo "   - pip: $(python3 -m pip --version 2>/dev/null || echo '24.x.x')"
 
     echo ""
     echo "   安装 Python 包:"
