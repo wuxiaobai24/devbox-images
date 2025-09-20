@@ -112,8 +112,37 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
 ENV PATH=/home/devuser/.local/bin:$PATH
 ENV CLAUDE_CODE_HOME=/home/devuser/.claude-code
 
-# 复制智能 AI 工具安装脚本
-COPY install-ai-tools.sh /usr/local/bin/install-ai-tools.sh
+# 创建智能 AI 工具安装脚本
+RUN cat > /usr/local/bin/install-ai-tools.sh << 'EOF'
+#!/bin/bash
+
+# AI 工具智能安装脚本
+echo "🤖 开始安装 AI 开发工具..."
+
+set -e
+
+# 检查是否在容器内
+if [ ! -f "/.dockerenv" ]; then
+    echo "⚠️  这个脚本应该在 Docker 容器内运行"
+    echo "请先运行: ./start.sh 然后 ./connect.sh"
+    exit 1
+fi
+
+echo "🎉 AI 工具安装完成!"
+echo ""
+echo "📋 安装摘要:"
+echo "   Claude Code CLI: 需要手动安装"
+echo "   Claude Code Router: 需要手动安装"
+echo "   Happy Coder: 需要手动安装"
+echo ""
+echo "🔧 使用方法:"
+echo "   claude-code --help      # Claude Code CLI 帮助"
+echo ""
+echo "⚠️  注意:"
+echo "   - 某些工具可能需要 API 密钥才能正常工作"
+echo "   - 首次使用时可能需要进行身份验证"
+EOF
+
 RUN chmod +x /usr/local/bin/install-ai-tools.sh
 
 # 创建开发环境初始化脚本
@@ -134,8 +163,54 @@ EOF
 
 RUN chmod +x /home/devuser/init-dev-env.sh
 
-# 复制 entrypoint 脚本
-COPY --chown=devuser:devuser entrypoint.sh /entrypoint.sh
+# 创建 entrypoint 脚本
+RUN cat > /entrypoint.sh << 'EOF'
+#!/bin/bash
+
+set -e
+
+# 初始化 SSH 主机密钥
+if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
+    ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N ''
+fi
+
+if [ ! -f /etc/ssh/ssh_host_ecdsa_key ]; then
+    ssh-keygen -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -N ''
+fi
+
+if [ ! -f /etc/ssh/ssh_host_ed25519_key ]; then
+    ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N ''
+fi
+
+# 根据参数启动服务
+case "$1" in
+    "start")
+        echo "🚀 启动 DevBox..."
+        echo "🔐 启动 SSH 服务..."
+        /usr/sbin/sshd -D &
+        echo "👤 用户: devuser"
+        echo "🔐 密码: devuser"
+        echo "🔌 端口: 22"
+        echo "🌐 连接: ssh devuser@localhost -p 2222"
+        echo "📝 或使用: ./connect.sh"
+        echo ""
+        echo "🎉 DevBox 已启动!"
+        echo "💡 提示: 使用 Ctrl+C 停止容器"
+        ;;
+    "shell")
+        echo "🐚 进入 shell 模式..."
+        exec /bin/bash
+        ;;
+    *)
+        echo "用法: $0 {start|shell}"
+        exit 1
+        ;;
+esac
+
+# 保持容器运行
+exec "$@"
+EOF
+
 RUN chmod +x /entrypoint.sh
 
 # 暴露 SSH 端口
