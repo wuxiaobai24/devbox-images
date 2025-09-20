@@ -92,7 +92,7 @@ install_claude_router() {
         echo "克隆 Claude Code Router 仓库..."
         if git clone https://github.com/anthropics/claude-code-router.git 2>/dev/null; then
             cd claude-code-router
-            if pip3 install -e .; then
+            if python3 -m pip install -e .; then
                 echo "✅ Claude Code Router 安装成功"
                 return 0
             fi
@@ -101,7 +101,7 @@ install_claude_router() {
         echo "Claude Code Router 仓库已存在，尝试更新安装..."
         cd claude-code-router
         git pull
-        if pip3 install -e .; then
+        if python3 -m pip install -e .; then
             echo "✅ Claude Code Router 更新成功"
             return 0
         fi
@@ -151,7 +151,7 @@ install_happy_coder() {
             "https://github.com/anthropics/happy-coder.git"; do
             if git clone "$repo" 2>/dev/null; then
                 cd happy-coder
-                if pip3 install -e .; then
+                if python3 -m pip install -e .; then
                     echo "✅ Happy Coder 安装成功"
                     return 0
                 fi
@@ -162,7 +162,7 @@ install_happy_coder() {
         echo "Happy Coder 仓库已存在，尝试更新安装..."
         cd happy-coder
         git pull
-        if pip3 install -e .; then
+        if python3 -m pip install -e .; then
             echo "✅ Happy Coder 更新成功"
             return 0
         fi
