@@ -81,19 +81,15 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
 ENV PATH=/home/devuser/.local/bin:$PATH
 ENV CLAUDE_CODE_HOME=/home/devuser/.claude-code
 
-# 创建 entrypoint 脚本
-RUN printf '#!/bin/bash\nset -e\n\n# Generate SSH host keys\nif [ ! -f /etc/ssh/ssh_host_rsa_key ]; then\n    ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N ""\nfi\n\n# Start SSH service\necho "Starting SSH service..."\n/usr/sbin/sshd -D\n' > /entrypoint.sh && \
-    chmod +x /entrypoint.sh
-
 # 暴露 SSH 端口
 EXPOSE 22
+
+# 生成 SSH 主机密钥并启动 SSH 服务
+RUN ssh-keygen -A
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD pgrep sshd || exit 1
 
-# 设置入口点
-ENTRYPOINT ["/entrypoint.sh"]
-
-# 默认命令
-CMD ["start"]
+# 直接启动 SSH 服务
+CMD ["/usr/sbin/sshd", "-D"]
