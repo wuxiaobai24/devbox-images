@@ -36,8 +36,7 @@ RUN mkdir -p /var/run/sshd && \
 RUN npm install -g @anthropic-ai/claude-code || echo "Claude Code CLI 安装失败"
 
 # 安装 Python 包 (修复版本)
-RUN python3 -m pip install --upgrade pip --break-system-packages && \
-    python3 -m pip install --no-cache-dir --break-system-packages \
+RUN python3 -m pip install --no-cache-dir --break-system-packages \
         anthropic \
         fastapi \
         uvicorn \
