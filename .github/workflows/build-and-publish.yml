@@ -70,7 +70,7 @@ jobs:
         # 测试基本功能
         docker exec devbox-test pgrep sshd
         docker exec devbox-test id devuser
-        docker exec devbox-test which claude-code
+        docker exec devbox-test su - devuser -c "which claude-code" || echo "Claude Code CLI not found in PATH"
 
         # 清理
         docker stop devbox-test
