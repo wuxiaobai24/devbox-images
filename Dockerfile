@@ -50,11 +50,12 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# 安装 Claude Code CLI
-RUN npm install -g @anthropic-ai/claude-code || echo "Claude Code CLI installation failed"
+# 安装 Claude Code CLI (作为 devuser)
+RUN su - devuser -c "npm install -g @anthropic-ai/claude-code" || echo "Claude Code CLI installation failed"
 
 # 确保 Claude Code CLI 在 PATH 中
-ENV PATH=$PATH:/home/devuser/.local/bin
+ENV PATH=$PATH:/home/devuser/.npm-global/bin
+RUN echo 'export PATH=$PATH:/home/devuser/.npm-global/bin' >> /home/devuser/.bashrc
 
 # Python 工具已通过系统包安装，无需额外包
 
