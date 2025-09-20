@@ -113,105 +113,71 @@ ENV PATH=/home/devuser/.local/bin:$PATH
 ENV CLAUDE_CODE_HOME=/home/devuser/.claude-code
 
 # 创建智能 AI 工具安装脚本
-RUN cat > /usr/local/bin/install-ai-tools.sh << 'EOF'
-#!/bin/bash
-
-# AI 工具智能安装脚本
-echo "🤖 开始安装 AI 开发工具..."
-
-set -e
-
-# 检查是否在容器内
-if [ ! -f "/.dockerenv" ]; then
-    echo "⚠️  这个脚本应该在 Docker 容器内运行"
-    echo "请先运行: ./start.sh 然后 ./connect.sh"
-    exit 1
-fi
-
-echo "🎉 AI 工具安装完成!"
-echo ""
-echo "📋 安装摘要:"
-echo "   Claude Code CLI: 需要手动安装"
-echo "   Claude Code Router: 需要手动安装"
-echo "   Happy Coder: 需要手动安装"
-echo ""
-echo "🔧 使用方法:"
-echo "   claude-code --help      # Claude Code CLI 帮助"
-echo ""
-echo "⚠️  注意:"
-echo "   - 某些工具可能需要 API 密钥才能正常工作"
-echo "   - 首次使用时可能需要进行身份验证"
-EOF
-
-RUN chmod +x /usr/local/bin/install-ai-tools.sh
+RUN echo '#!/bin/bash' > /usr/local/bin/install-ai-tools.sh && \
+    echo '' >> /usr/local/bin/install-ai-tools.sh && \
+    echo '# AI 工具智能安装脚本' >> /usr/local/bin/install-ai-tools.sh && \
+    echo 'echo "🤖 开始安装 AI 开发工具..."' >> /usr/local/bin/install-ai-tools.sh && \
+    echo '' >> /usr/local/bin/install-ai-tools.sh && \
+    echo 'echo "🎉 AI 工具安装完成!"' >> /usr/local/bin/install-ai-tools.sh && \
+    chmod +x /usr/local/bin/install-ai-tools.sh
 
 # 创建开发环境初始化脚本
-RUN cat > /home/devuser/init-dev-env.sh << 'EOF'
-#!/bin/bash
-echo "🚀 初始化开发环境..."
-echo ""
-echo "🤖 安装 AI 开发工具..."
-sudo /usr/local/bin/install-ai-tools.sh
-echo ""
-echo "🎉 开发环境初始化完成！"
-echo ""
-echo "📝 后续步骤："
-echo "1. 设置 API 密钥（如果需要）：export ANTHROPIC_API_KEY=your_key"
-echo "2. 运行身份验证：claude-code auth login"
-echo "3. 开始使用：claude-code --help"
-EOF
-
-RUN chmod +x /home/devuser/init-dev-env.sh
+RUN echo '#!/bin/bash' > /home/devuser/init-dev-env.sh && \
+    echo 'echo "🚀 初始化开发环境..."' >> /home/devuser/init-dev-env.sh && \
+    echo 'echo ""' >> /home/devuser/init-dev-env.sh && \
+    echo 'echo "🤖 安装 AI 开发工具..."' >> /home/devuser/init-dev-env.sh && \
+    echo 'sudo /usr/local/bin/install-ai-tools.sh' >> /home/devuser/init-dev-env.sh && \
+    echo 'echo ""' >> /home/devuser/init-dev-env.sh && \
+    echo 'echo "🎉 开发环境初始化完成！"' >> /home/devuser/init-dev-env.sh && \
+    chmod +x /home/devuser/init-dev-env.sh && \
+    chown devuser:devuser /home/devuser/init-dev-env.sh
 
 # 创建 entrypoint 脚本
-RUN cat > /entrypoint.sh << 'EOF'
-#!/bin/bash
-
-set -e
-
-# 初始化 SSH 主机密钥
-if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
-    ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N ''
-fi
-
-if [ ! -f /etc/ssh/ssh_host_ecdsa_key ]; then
-    ssh-keygen -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -N ''
-fi
-
-if [ ! -f /etc/ssh/ssh_host_ed25519_key ]; then
-    ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N ''
-fi
-
-# 根据参数启动服务
-case "$1" in
-    "start")
-        echo "🚀 启动 DevBox..."
-        echo "🔐 启动 SSH 服务..."
-        /usr/sbin/sshd -D &
-        echo "👤 用户: devuser"
-        echo "🔐 密码: devuser"
-        echo "🔌 端口: 22"
-        echo "🌐 连接: ssh devuser@localhost -p 2222"
-        echo "📝 或使用: ./connect.sh"
-        echo ""
-        echo "🎉 DevBox 已启动!"
-        echo "💡 提示: 使用 Ctrl+C 停止容器"
-        ;;
-    "shell")
-        echo "🐚 进入 shell 模式..."
-        exec /bin/bash
-        ;;
-    *)
-        echo "用法: $0 {start|shell}"
-        exit 1
-        ;;
-esac
-
-# 保持容器运行
-exec "$@"
-EOF
-
-RUN chmod +x /entrypoint.sh
+RUN echo '#!/bin/bash' > /entrypoint.sh && \
+    echo '' >> /entrypoint.sh && \
+    echo 'set -e' >> /entrypoint.sh && \
+    echo '' >> /entrypoint.sh && \
+    echo '# 初始化 SSH 主机密钥' >> /entrypoint.sh && \
+    echo 'if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then' >> /entrypoint.sh && \
+    echo '    ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N ""' >> /entrypoint.sh && \
+    echo 'fi' >> /entrypoint.sh && \
+    echo '' >> /entrypoint.sh && \
+    echo 'if [ ! -f /etc/ssh/ssh_host_ecdsa_key ]; then' >> /entrypoint.sh && \
+    echo '    ssh-keygen -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -N ""' >> /entrypoint.sh && \
+    echo 'fi' >> /entrypoint.sh && \
+    echo '' >> /entrypoint.sh && \
+    echo 'if [ ! -f /etc/ssh/ssh_host_ed25519_key ]; then' >> /entrypoint.sh && \
+    echo '    ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N ""' >> /entrypoint.sh && \
+    echo 'fi' >> /entrypoint.sh && \
+    echo '' >> /entrypoint.sh && \
+    echo '# 根据参数启动服务' >> /entrypoint.sh && \
+    echo 'case "$1" in' >> /entrypoint.sh && \
+    echo '    "start")' >> /entrypoint.sh && \
+    echo '        echo "🚀 启动 DevBox..."' >> /entrypoint.sh && \
+    echo '        echo "🔐 启动 SSH 服务..."' >> /entrypoint.sh && \
+    echo '        /usr/sbin/sshd -D &' >> /entrypoint.sh && \
+    echo '        echo "👤 用户: devuser"' >> /entrypoint.sh && \
+    echo '        echo "🔐 密码: devuser"' >> /entrypoint.sh && \
+    echo '        echo "🔌 端口: 22"' >> /entrypoint.sh && \
+    echo '        echo "🌐 连接: ssh devuser@localhost -p 2222"' >> /entrypoint.sh && \
+    echo '        echo "📝 或使用: ./connect.sh"' >> /entrypoint.sh && \
+    echo '        echo ""' >> /entrypoint.sh && \
+    echo '        echo "🎉 DevBox 已启动!"' >> /entrypoint.sh && \
+    echo '        echo "💡 提示: 使用 Ctrl+C 停止容器"' >> /entrypoint.sh && \
+    echo '        ;;' >> /entrypoint.sh && \
+    echo '    "shell")' >> /entrypoint.sh && \
+    echo '        echo "🐚 进入 shell 模式..."' >> /entrypoint.sh && \
+    echo '        exec /bin/bash' >> /entrypoint.sh && \
+    echo '        ;;' >> /entrypoint.sh && \
+    echo '    *)' >> /entrypoint.sh && \
+    echo '        echo "用法: $0 {start|shell}"' >> /entrypoint.sh && \
+    echo '        exit 1' >> /entrypoint.sh && \
+    echo '        ;;' >> /entrypoint.sh && \
+    echo 'esac' >> /entrypoint.sh && \
+    echo '' >> /entrypoint.sh && \
+    echo '# 保持容器运行' >> /entrypoint.sh && \
+    echo 'exec "$@"' >> /entrypoint.sh && \
+    chmod +x /entrypoint.sh
 
 # 暴露 SSH 端口
 EXPOSE 22
