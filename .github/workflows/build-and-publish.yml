@@ -2,7 +2,7 @@ name: Build and Publish DevBox Docker Image
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
     tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
@@ -62,7 +62,7 @@ jobs:
         docker run -d --name devbox-test -p 2223:22 ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
 
         # 等待容器启动
-        sleep 30
+        sleep 20
 
         # 测试 SSH 连接
         timeout 30 bash -c "until nc -z localhost 2223; do sleep 1; done"
@@ -70,6 +70,7 @@ jobs:
         # 测试基本功能
         docker exec devbox-test pgrep sshd
         docker exec devbox-test id devuser
+        docker exec devbox-test which claude-code
 
         # 清理
         docker stop devbox-test
@@ -156,7 +157,7 @@ jobs:
           ```
 
           ### Image Details
-          - **Size**: ~1.5GB
+          - **Size**: ~1.2-1.5GB
           - **Architecture**: linux/amd64, linux/arm64
           - **Base Image**: ubuntu:24.04
 
@@ -164,11 +165,12 @@ jobs:
           - Ubuntu 24.04 LTS
           - SSH server (port 22)
           - Node.js 20
-          - Python 3.11
+          - Python 3
           - Git, curl, wget
           - Claude Code CLI
-          - Claude Code Router (@musistudio)
-          - Happy client (@slopus)
+          - Claude Code Router support
+          - Happy client support
+          - Modern development tools
 
           ---
           *Release created automatically by GitHub Actions*
