@@ -55,7 +55,7 @@ jobs:
     - name: Check script permissions
       run: |
         # 检查脚本文件权限
-        scripts=("start.sh" "stop.sh" "connect.sh" "validate.sh" "install-ai-tools.sh")
+        scripts=("start.sh" "stop.sh" "connect.sh" "quick-check.sh" "install-ai-tools.sh" "install-enhanced-tools.sh" "test-enhanced-tools.sh")
         for script in "${scripts[@]}"; do
           if [ -f "$script" ] && [ ! -x "$script" ]; then
             echo "❌ Script $script is not executable"

@@ -103,8 +103,8 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | g
     apt-get install -y gh && \
     rm -rf /var/lib/apt/lists/*
 
-# 安装 Go
-RUN GO_VERSION=$(curl -s https://go.dev/VERSION?m=text | head -1) && \
+# 安装 Go (使用稳定版本)
+RUN GO_VERSION="go1.22.5" && \
     cd /tmp && \
     wget -q "https://go.dev/dl/${GO_VERSION}.linux-amd64.tar.gz" && \
     rm -rf /usr/local/go && \
