@@ -9,19 +9,31 @@ if ! docker-compose ps | grep -q "Up"; then
     exit 1
 fi
 
+# 获取环境变量或使用默认值
+DEV_USER=${DEV_USER:-devuser}
+DEV_PASSWORD=${DEV_PASSWORD:-devuser}
+
 # 连接方式选择
 case "$1" in
     "ssh")
         echo "🔐 使用 SSH 连接..."
-        ssh devuser@localhost -p 2222
+        echo "用户名: $DEV_USER"
+        echo "密码: $DEV_PASSWORD"
+
+        # 使用 sshpass 自动输入密码（如果安装了）
+        if command -v sshpass &> /dev/null; then
+            sshpass -p "$DEV_PASSWORD" ssh "$DEV_USER"@localhost -p 2222
+        else
+            ssh "$DEV_USER"@localhost -p 2222
+        fi
         ;;
     "ssh-key")
         echo "🔐 使用 SSH 密钥连接..."
-        ssh -i ./ssh/id_rsa devuser@localhost -p 2222
+        ssh -i ./ssh/id_rsa "$DEV_USER"@localhost -p 2222
         ;;
     "dev")
         echo "👨‍💻 进入开发用户环境..."
-        docker-compose exec devbox sudo -u devuser /bin/bash
+        docker-compose exec devbox sudo -u "$DEV_USER" /bin/bash
         ;;
     "root")
         echo "🔒 进入 root 环境..."
@@ -38,13 +50,21 @@ case "$1" in
 
         case $choice in
             1)
-                ssh devuser@localhost -p 2222
+                echo "用户名: $DEV_USER"
+                echo "密码: $DEV_PASSWORD"
+
+                # 使用 sshpass 自动输入密码（如果安装了）
+                if command -v sshpass &> /dev/null; then
+                    sshpass -p "$DEV_PASSWORD" ssh "$DEV_USER"@localhost -p 2222
+                else
+                    ssh "$DEV_USER"@localhost -p 2222
+                fi
                 ;;
             2)
-                ssh -i ./ssh/id_rsa devuser@localhost -p 2222
+                ssh -i ./ssh/id_rsa "$DEV_USER"@localhost -p 2222
                 ;;
             3)
-                docker-compose exec devbox sudo -u devuser /bin/bash
+                docker-compose exec devbox sudo -u "$DEV_USER" /bin/bash
                 ;;
             4)
                 docker-compose exec devbox /bin/bash

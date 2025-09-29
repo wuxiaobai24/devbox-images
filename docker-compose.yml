@@ -19,6 +19,8 @@ services:
       - TZ=Asia/Shanghai
       - LANG=en_US.UTF-8
       - LC_ALL=en_US.UTF-8
+      - DEV_USER=${DEV_USER:-devuser}
+      - DEV_PASSWORD=${DEV_PASSWORD:-devuser}
     restart: unless-stopped
     networks:
       - devbox_network
